@@ -8,7 +8,7 @@
     "buildNormalizedTaskText": "f3a55d371592ed00e4323752a4b7af9e8e9297ea54eb1e047d685edfb1f4d741"
   },
   "providers/google/public/app.js": {
-    "buildGeminiLiveSystemInstruction": "492358ca6ed8a10954b4dd7a29e576906415b904967ebb72e863ae7e163434cb",
+    "buildGeminiLiveSystemInstruction": "6a942583d851e83c1b8fa0a652d85981759a603a882a2b1b40f1162403952728",
     "runGeminiActiveReminderTick": "855285db729a6072aae395f4c77126698bb20bc050f8b8fdd4f6f90034e4b175",
     "handleGeminiReminderAlert": "3aa1fd99f1e5b5d0b202a21ec2bf9fbefeefcf449f30b7d09728f0e322b3d619",
     "sendGeminiLiveEvent": "5597f18a107ff65aabc79f43ea7501cb760c15cf1ba5a846b4ddfcf38614eb6d"
@@ -22,7 +22,7 @@
     "buildNormalizedTaskText": "f3a55d371592ed00e4323752a4b7af9e8e9297ea54eb1e047d685edfb1f4d741"
   },
   "providers/aliyun/public/app.js": {
-    "buildGeminiLiveSystemInstruction": "492358ca6ed8a10954b4dd7a29e576906415b904967ebb72e863ae7e163434cb",
+    "buildGeminiLiveSystemInstruction": "6a942583d851e83c1b8fa0a652d85981759a603a882a2b1b40f1162403952728",
     "runGeminiActiveReminderTick": "5ee43dd63c8f3016b29593492d7cf66c6bf75e3bc5a88517d83bd4752be11219",
     "handleGeminiReminderAlert": "b4d953c2607a942df74cea521f7cd8aad8a878f653138efe1fb21a1a87ef0858",
     "sendGeminiLiveEvent": "89eecb52f0a9e25291be1b7c8166a416e1e31af7b46b05617d805fa738505f2a"

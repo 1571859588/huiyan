@@ -17,6 +17,7 @@ jobs:
       - run: node tools/test-prepare-cache.cjs providers/google/public/app.js
       - run: node tools/test-prepare-cache.cjs providers/aliyun/public/app.js
       - run: node tools/test-reminder-grace.cjs
+      - run: node tools/test-model-layers.cjs
       - run: node tools/run-native-checks.cjs
       - name: Check immutable expert cache
         run: |

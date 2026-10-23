@@ -3783,8 +3783,11 @@ function buildGeminiLiveSystemInstruction(
     '你是视障者的视频通话助手，负责普通问答和把系统确认过的主动提醒结果自然说给用户听。',
     '所有回复和内部播报都必须使用自然、清晰的中国大陆普通话，发音平稳，语速适中；除用户原话中的英文专有名称外，不得夹杂英语或使用英语语调。',
     '默认保持安静；只有用户明确说话提问，或者收到以“[SAY]”开头的内部播报指令时，才开口。',
-    '收到以“[SAY]”开头的内部播报指令时，只逐字说出标记后的内容，不得增加、改写或解释。',
-    '绝对不要读出“[SAY]”标记，也不要在播报前后加“主动提醒、提醒结果、提醒完成、任务完成、播报完成”等流程话术。',
+    ...(globalThis.HuiyanModelLayers?.readbackRules() || [
+      '收到以“[SAY]”开头的内部播报指令时，只逐字说出标记后的内容，不得增加、改写或解释。',
+      '绝对不要读出“[SAY]”标记，也不要在播报前后加“主动提醒、提醒结果、提醒完成、任务完成、播报完成”等流程话术。',
+      '主动提醒播报以本次实际结果正文为准：回答合同关心的结果，保留正文中已有的位置、方位和状态，不要用合同里的确认句或固定结果模板替换正文，不得编造位置或距离。'
+    ]),
     '没有收到系统主动提醒结果时，不要自行说“主动提醒”“注意前方”“小心”等提醒句，也不要补充结果里没有写明的门框、障碍、门牌、招牌或导航信息。',
     '用户设置主动提醒任务时，只自然确认一句；之后等待后台快筛结果，不要自己主动判断。',
     '确认任务时先区分三类：目标出现；明确终点达成；没有指定终点的任意前后变化。用户给出唯一终点时必须按结果达成确认，不能因为原话带动作或变化语气而说成任意变化。',
@@ -7371,7 +7374,7 @@ function getBrowserDirectActiveReminderPreparation(reminder, task, promptMode, f
       || (cached.expiresAt && cached.expiresAt <= Date.now())) {
     cached = { task, promptMode, taskSeq, model, pool, transport: reminder.activeScreenTransport, expiresAt: 0 };
     reminder.browserScreenPreparation = cached;
-    cached.promise = apiPost('/api/active-reminder-direct-prepare', { task, frameCount, promptMode })
+    cached.promise = apiPost(globalThis.HuiyanModelLayers?.endpoint(reminder, appState.appVariant, 'prepare', '/api/active-reminder-direct-prepare') || '/api/active-reminder-direct-prepare', { task, frameCount, promptMode })
       .then(prepared => {
         if (!prepared?.model || !prepared?.prompt) throw new Error('手机直连筛图准备资料不完整。');
         cached.expiresAt = Date.now() + 60000;
@@ -7477,7 +7480,7 @@ function isBrowserDirectActiveReminderRetryableError(error) {
 
 async function requestGeminiActiveReminderResult(reminder, body) {
   if (reminder.activeScreenTransport !== 'browser_direct_generate_content') {
-    return apiPost('/api/active-reminder-check', body);
+    return apiPost(globalThis.HuiyanModelLayers?.endpoint(reminder, appState.appVariant, 'cloudCheck', '/api/active-reminder-check') || '/api/active-reminder-check', body);
   }
   try {
     return await requestBrowserDirectActiveReminderResult(reminder, body);
@@ -7489,7 +7492,7 @@ async function requestGeminiActiveReminderResult(reminder, body) {
       frameCount: body.frameCount || 0,
       reason: error.message || String(error)
     });
-    return apiPost('/api/active-reminder-check', body);
+    return apiPost(globalThis.HuiyanModelLayers?.endpoint(reminder, appState.appVariant, 'cloudCheck', '/api/active-reminder-check') || '/api/active-reminder-check', body);
   }
 }
 
@@ -13030,6 +13033,8 @@ function buildRealtimeInstructions() {
     activeReminderMessage === 'speed_visual_answer'
       ? `当前是极速视觉追问播报。后台视觉模型已经根据当前画面回答：“${speedVisualAnswerMessage}”。请自然读出这段答案，可以按原意略微口语化。不要自行判断画面，不要说自己看不到画面，不要追加解释。`
       : '',
+    ...(['speed_trigger', 'ali_unified_say'].includes(activeReminderMessage)
+      ? (globalThis.HuiyanModelLayers?.resultRules() || []) : []),
     activeReminderMessage === 'ali_unified_say'
       ? `当前是纯阿里实时慧眼的应用层固定播报。请立刻逐字说：“${activeReminderSpeechText}”只能说这一句。不要判断画面，不要改写，不要追加解释。`
       : '',
