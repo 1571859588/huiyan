@@ -4915,6 +4915,7 @@ function stopGeminiActiveReminder(message = '') {
     return;
   }
   reminder.stopping = true;
+  reminder.browserScreenPreparation = null;
   reminder.webSearchController?.close();
   if (reminder.findScreenTransport === 'gemini_live' && reminder.reminderSessionId) {
     fetch('/api/find-object-live-close', {
@@ -7360,6 +7361,29 @@ function sendGeminiVideoFrame() {
   });
 }
 
+function getBrowserDirectActiveReminderPreparation(reminder, task, promptMode, frameCount) {
+  const taskSeq = reminder.activeTaskSeq || 0;
+  const model = reminder.browserActiveReminderModel || '';
+  const pool = reminder.browserActiveReminderAiPool;
+  let cached = reminder.browserScreenPreparation;
+  if (!cached || cached.task !== task || cached.promptMode !== promptMode || cached.taskSeq !== taskSeq
+      || cached.model !== model || cached.pool !== pool || cached.transport !== reminder.activeScreenTransport
+      || (cached.expiresAt && cached.expiresAt <= Date.now())) {
+    cached = { task, promptMode, taskSeq, model, pool, transport: reminder.activeScreenTransport, expiresAt: 0 };
+    reminder.browserScreenPreparation = cached;
+    cached.promise = apiPost('/api/active-reminder-direct-prepare', { task, frameCount, promptMode })
+      .then(prepared => {
+        if (!prepared?.model || !prepared?.prompt) throw new Error('手机直连筛图准备资料不完整。');
+        cached.expiresAt = Date.now() + 60000;
+        return prepared;
+      }).catch(error => {
+        if (reminder.browserScreenPreparation === cached) reminder.browserScreenPreparation = null;
+        throw error;
+      });
+  }
+  return cached.promise;
+}
+
 async function requestBrowserDirectActiveReminderResult(reminder, {
   imageDataUrl,
   task,
@@ -7374,14 +7398,12 @@ async function requestBrowserDirectActiveReminderResult(reminder, {
   if (!image) {
     throw new Error('手机直连主动提醒没有取得有效图片。');
   }
-  const prepared = await apiPost('/api/active-reminder-direct-prepare', {
-    task,
-    frameCount,
-    promptMode
-  });
+  const taskSeq = reminder.activeTaskSeq || 0;
+  const prepared = await getBrowserDirectActiveReminderPreparation(reminder, task, promptMode, frameCount);
   if (
     appState.geminiReminder !== reminder
     || getGeminiActiveReminderTask() !== task
+    || (reminder.activeTaskSeq || 0) !== taskSeq
   ) {
     throw new Error('主动提醒任务已更换，本次手机直连筛图已作废。');
   }
@@ -9923,6 +9945,7 @@ function clearGeminiReminderTaskForNewInstruction(reminder, reason = '') {
     return;
   }
   rollbackGeminiPendingAlertDelivery(reminder, reason || 'new_instruction');
+  reminder.browserScreenPreparation = null;
   reminder.taskOverride = '';
   reminder.lastAlertedTaskKey = '';
   reminder.alertedResultKeys = [];
