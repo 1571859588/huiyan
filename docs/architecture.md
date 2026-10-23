@@ -30,7 +30,7 @@ Live通过`set_active_reminder_contract`提交合同，应用accepted后才确�
 | Google | Live对话、合同、声音；Lite视觉检查；网页服务器转接、授权iOS可直连 | `providers/google/public/app.js`、`providers/google/server.js` |
 | 阿里 | 实时声音和合同；视觉/普通问答/搜索分工；两个视频入口有差别 | `providers/aliyun/public/app.js`、`providers/aliyun/server.js`、`shared/aliyun-*.js` |
 | 35B本地实验 | 云端合同，本地Y/N筛图，阿里结合当前图整理并播报 | `LocalScreenEngine.swift`、`LocalScreenReminderBridge.swift` |
-| 1B助推实验（当前） | Google Live合同，本地1B粗筛，正触发交Google Lite完整审核，应用与原Live播报/交付 | `LocalScreenReminderBridge.swift` |
+| 1B助推实验（当前源码） | Google直连Live合同，本地1B粗筛，正触发交阿里3.7 Flash完整审核和整理，应用与原Google Live播报/交付 | `LocalScreenReminderBridge.swift` |
 | 1B直接Live复核（历史） | 本地触发后同一Live看图决定是否说；因超时、只有转写无声音等问题停用 | `LocalScreenConditionalLive.swift`，当前不加载 |
 
 `public/app.js`仍是较大的现有运行时。可通过函数名定位：`handleGeminiReminderAlert`、`runGeminiActiveReminderTick`、`buildGeminiLiveSystemInstruction`、`handleRealtimeServerEvent`、`buildRealtimeInstructions`、`sendGeminiLiveEvent`。服务器提供合同归一化、视觉模型适配、搜索桥和实时代理。网络搜索只返回真实摘要与链接，不把摘要当作整页或现场事实。
