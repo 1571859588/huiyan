@@ -119,3 +119,4 @@ console.log('App launch lifecycle and permanent native entry order checks passed
 assert.doesNotMatch(view, /sectionButton\(\.teaching/);
 assert.doesNotMatch(configuration, /teachingBaseURL/);
 assert.match(view, /entryController: assistantEntries/);
+assert.match(webView, /find\.attach\(webView\)/, 'Excluding teaching must retain native object-finding attachment.');

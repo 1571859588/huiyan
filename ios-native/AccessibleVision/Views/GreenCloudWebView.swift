@@ -132,6 +132,7 @@ struct GreenCloudWebView: UIViewRepresentable {
             self.webView = webView
             localScreen.attach(webView)
             entryController?.attach(webView)
+            find.attach(webView)
             camera.onFramePacket = { [weak self] packet in
                 DispatchQueue.main.async {
                     self?.receive(packet)
