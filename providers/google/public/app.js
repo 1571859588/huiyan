@@ -6822,7 +6822,7 @@ function makeRealtimeImageDropError(message, dropReason) {
   return error;
 }
 
-function runGreencloudRealtimeImageRequest(meta, operation) {
+function runGreencloudRealtimeImageRequest(meta, operation, options = {}) {
   if (appState.appVariant !== 'greencloud-gemini') {
     return operation(null, { ...meta, requestSentAt: Date.now() });
   }
@@ -6868,6 +6868,26 @@ function runGreencloudRealtimeImageRequest(meta, operation) {
       const latencyMs = resultReceivedAt - requestSentAt;
       const resultAgeMs = resultReceivedAt - Number(requestMeta.capturedAt || requestSentAt);
       const staleDropped = effectiveExpired || resultAgeMs > REALTIME_SCREEN_RESULT_MAX_AGE_MS;
+      if (staleDropped && meta.taskType === 'active_reminder'
+          && typeof options.onLateResult === 'function' && !controller.signal.aborted
+          && resultAgeMs >= 0 && resultAgeMs <= GEMINI_REALTIME_IMAGE_ABORT_MS) {
+        // The caller was already released at 3.5s. Reuse the original result
+        // handler without settling the caller or releasing its slot twice.
+        let accepted = false;
+        try { accepted = options.onLateResult(value) === true; }
+        catch (error) { logClientEvent('gemini_reminder.late_result_error', { message: String(error?.message || error) }); }
+        logRealtimeImageLifecycle(requestMeta, {
+          resultReceivedAt, latencyMs, effectiveExpired,
+          staleDropped: !accepted,
+          dropReason: accepted ? 'late_result_recovered' : 'late_result_superseded'
+        });
+        if (!outerSettled) {
+          outerSettled = true;
+          window.clearTimeout(effectiveTimer);
+          reject(makeRealtimeImageDropError('实时图片等待已释放。', 'timeout_effective'));
+        }
+        return;
+      }
       if (staleDropped) {
         realtimeImageMetrics.staleDropCount += 1;
         logRealtimeImageLifecycle(requestMeta, {
@@ -7180,14 +7200,13 @@ async function requestBrowserDirectActiveReminderLiveResult(reminder, {
   if (!image) {
     throw new Error('手机直连主动提醒没有取得有效图片。');
   }
-  const prepared = await apiPost('/api/active-reminder-direct-prepare', {
-    task,
-    frameCount,
-    promptMode
-  }, { signal });
+  const taskSeq = reminder.activeTaskSeq || 0;
+  const prepared = await getBrowserDirectActiveReminderPreparation(reminder, task, promptMode, frameCount);
   if (
     appState.geminiReminder !== reminder
     || getGeminiActiveReminderTask() !== task
+    || (reminder.activeTaskSeq || 0) !== taskSeq
+    || signal?.aborted
   ) {
     throw new Error('主动提醒任务已更换，本次手机直连筛图已作废。');
   }
@@ -7475,6 +7494,104 @@ async function runGeminiActiveReminderTick() {
     const directTransport = directLiveTransport
       || reminder.activeScreenTransport === 'browser_direct_generate_content';
     const realtimeRequestId = `active-reminder-${reminder.reminderSessionId || 'session'}-${requestSeq}`;
+    const applyResult = (result, late = false) => {
+      if (
+        appState.geminiReminder !== reminder
+        || !reminder.isReady || reminder.stopping
+        || (late && (document.hidden || !appState.stream))
+        || (reminder.activeTaskSeq || 0) !== taskSeq
+        || getGeminiActiveReminderTask() !== task
+      ) {
+        logClientEvent('gemini_reminder.check_ignored', {
+          reason: 'stale_task_result',
+          label,
+          promptMode,
+          frameCount,
+          task,
+          taskSeq,
+          currentTaskSeq: reminder.activeTaskSeq || 0,
+          currentTask: getGeminiActiveReminderTask()
+        });
+        return false;
+      }
+      if (
+        greencloudConcurrentScreening
+        && requestSeq <= (reminder.activeLatestAppliedRequestSeq || 0)
+      ) {
+        logClientEvent('gemini_reminder.check_ignored', {
+          reason: 'older_response',
+          label,
+          promptMode,
+          frameCount,
+          requestSeq,
+          latestAppliedRequestSeq: reminder.activeLatestAppliedRequestSeq || 0,
+          task
+        });
+        return false;
+      }
+      if (greencloudConcurrentScreening) {
+        reminder.activeLatestAppliedRequestSeq = requestSeq;
+      }
+      const guardedResult = applyReliableActiveReminderEvidenceGuard(reminder, result, task);
+      const memoryResult = applyActiveReminderStateMemory(reminder, guardedResult, task, {
+        source: 'gemini',
+        label,
+        frameCount,
+        promptMode
+      });
+      recordRealtimeDebug('gemini_reminder.check_result', {
+        frameCount,
+        requestSeq,
+        task,
+        promptMode,
+        transport: result.transport || reminder.activeScreenTransport || 'server_generate_content',
+        browserKeySlot: result.browserKeySlot || '',
+        shouldAlert: memoryResult.shouldAlert,
+        latencyMs: memoryResult.latencyMs,
+        rawText: memoryResult.rawText,
+        state: memoryResult.state || '',
+        currentState: memoryResult.currentState || '',
+        observation: memoryResult.observation || '',
+        resultReached: Boolean(memoryResult.resultReached),
+        resultText: memoryResult.resultText || '',
+        instanceKey: memoryResult.instanceKey || '',
+        speakable: memoryResult.speakable || '',
+        confidence: memoryResult.confidence ?? '',
+        evidenceGuard: memoryResult._evidenceGuard || null,
+        stateMemory: memoryResult._stateMemory || null
+      });
+      logClientEvent('gemini_reminder.check_result', {
+        label,
+        promptMode,
+        frameCount,
+        requestSeq,
+        task,
+        transport: result.transport || reminder.activeScreenTransport || 'server_generate_content',
+        browserKeySlot: result.browserKeySlot || '',
+        shouldAlert: Boolean(memoryResult.shouldAlert),
+        latencyMs: memoryResult.latencyMs ?? '',
+        rawText: memoryResult.rawText || '',
+        state: memoryResult.state || '',
+        currentState: memoryResult.currentState || '',
+        observation: memoryResult.observation || '',
+        resultReached: Boolean(memoryResult.resultReached),
+        resultText: memoryResult.resultText || '',
+        instanceKey: memoryResult.instanceKey || '',
+        speakable: memoryResult.speakable || '',
+        confidence: memoryResult.confidence ?? '',
+        evidenceGuard: memoryResult._evidenceGuard || null,
+        stateMemory: memoryResult._stateMemory || null
+      });
+      if (memoryResult.shouldAlert) {
+        handleGeminiReminderAlert(memoryResult, task);
+      } else {
+        updateGeminiReminderMissState(reminder, task);
+        if (reminder.frameCount === 1 || reminder.frameCount % 10 === 0) {
+          setActiveReminderStatus(`${label}运行中：3.6 已快筛 ${reminder.frameCount} 帧，最近延迟 ${result.latencyMs ?? '未知'} 毫秒。`);
+        }
+      }
+      return true;
+    };
     const result = await runGreencloudRealtimeImageRequest({
       taskType: 'active_reminder',
       provider: directLiveTransport
@@ -7496,100 +7613,9 @@ async function runGeminiActiveReminderTick() {
       requestSentAt: timing.requestSentAt,
       realtimeRequestId,
       inFlightCount: reminder.activeInFlightCount
-    }, signal));
-    if (
-      appState.geminiReminder !== reminder
-      || (reminder.activeTaskSeq || 0) !== taskSeq
-      || getGeminiActiveReminderTask() !== task
-    ) {
-      logClientEvent('gemini_reminder.check_ignored', {
-        reason: 'stale_task_result',
-        label,
-        promptMode,
-        frameCount,
-        task,
-        taskSeq,
-        currentTaskSeq: reminder.activeTaskSeq || 0,
-        currentTask: getGeminiActiveReminderTask()
-      });
-      return;
-    }
-    if (
-      greencloudConcurrentScreening
-      && requestSeq <= (reminder.activeLatestAppliedRequestSeq || 0)
-    ) {
-      logClientEvent('gemini_reminder.check_ignored', {
-        reason: 'older_response',
-        label,
-        promptMode,
-        frameCount,
-        requestSeq,
-        latestAppliedRequestSeq: reminder.activeLatestAppliedRequestSeq || 0,
-        task
-      });
-      return;
-    }
-    if (greencloudConcurrentScreening) {
-      reminder.activeLatestAppliedRequestSeq = requestSeq;
-    }
-    const guardedResult = applyReliableActiveReminderEvidenceGuard(reminder, result, task);
-    const memoryResult = applyActiveReminderStateMemory(reminder, guardedResult, task, {
-      source: 'gemini',
-      label,
-      frameCount,
-      promptMode
-    });
-    recordRealtimeDebug('gemini_reminder.check_result', {
-      frameCount,
-      requestSeq,
-      task,
-      promptMode,
-      transport: result.transport || reminder.activeScreenTransport || 'server_generate_content',
-      browserKeySlot: result.browserKeySlot || '',
-      shouldAlert: memoryResult.shouldAlert,
-      latencyMs: memoryResult.latencyMs,
-      rawText: memoryResult.rawText,
-      state: memoryResult.state || '',
-      currentState: memoryResult.currentState || '',
-      observation: memoryResult.observation || '',
-      resultReached: Boolean(memoryResult.resultReached),
-      resultText: memoryResult.resultText || '',
-      instanceKey: memoryResult.instanceKey || '',
-      speakable: memoryResult.speakable || '',
-      confidence: memoryResult.confidence ?? '',
-      evidenceGuard: memoryResult._evidenceGuard || null,
-      stateMemory: memoryResult._stateMemory || null
-    });
-    logClientEvent('gemini_reminder.check_result', {
-      label,
-      promptMode,
-      frameCount,
-      requestSeq,
-      task,
-      transport: result.transport || reminder.activeScreenTransport || 'server_generate_content',
-      browserKeySlot: result.browserKeySlot || '',
-      shouldAlert: Boolean(memoryResult.shouldAlert),
-      latencyMs: memoryResult.latencyMs ?? '',
-      rawText: memoryResult.rawText || '',
-      state: memoryResult.state || '',
-      currentState: memoryResult.currentState || '',
-      observation: memoryResult.observation || '',
-      resultReached: Boolean(memoryResult.resultReached),
-      resultText: memoryResult.resultText || '',
-      instanceKey: memoryResult.instanceKey || '',
-      speakable: memoryResult.speakable || '',
-      confidence: memoryResult.confidence ?? '',
-      evidenceGuard: memoryResult._evidenceGuard || null,
-      stateMemory: memoryResult._stateMemory || null
-    });
-    if (memoryResult.shouldAlert) {
-      handleGeminiReminderAlert(memoryResult, task);
-    } else {
-      updateGeminiReminderMissState(reminder, task);
-      if (reminder.frameCount === 1 || reminder.frameCount % 10 === 0) {
-        setActiveReminderStatus(`${label}运行中：3.6 已快筛 ${reminder.frameCount} 帧，最近延迟 ${result.latencyMs ?? '未知'} 毫秒。`);
-      }
-    }
+    }, signal), { onLateResult: result => applyResult(result, true) });
+    applyResult(result);
+
   } catch (error) {
     if (error?.realtimeImageDrop) {
       logClientEvent('gemini_reminder.check_ignored', {

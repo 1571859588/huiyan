@@ -9,7 +9,7 @@
   },
   "providers/google/public/app.js": {
     "buildGeminiLiveSystemInstruction": "492358ca6ed8a10954b4dd7a29e576906415b904967ebb72e863ae7e163434cb",
-    "runGeminiActiveReminderTick": "e90efc257fbdb0da8be31e03fa634c6ba9dd1426428b2a5523634ad6826d65b2",
+    "runGeminiActiveReminderTick": "855285db729a6072aae395f4c77126698bb20bc050f8b8fdd4f6f90034e4b175",
     "handleGeminiReminderAlert": "3aa1fd99f1e5b5d0b202a21ec2bf9fbefeefcf449f30b7d09728f0e322b3d619",
     "sendGeminiLiveEvent": "5597f18a107ff65aabc79f43ea7501cb760c15cf1ba5a846b4ddfcf38614eb6d"
   },

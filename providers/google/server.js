@@ -2039,15 +2039,18 @@ async function callGeminiGenerateContent({
         const resultAgeMs = Number(capturedAt || 0) > 0
           ? resultReceivedAt - Number(capturedAt)
           : latencyMs;
-        const staleDropped = resultAgeMs > GEMINI_REALTIME_IMAGE_EFFECTIVE_MS;
+        const reminderGrace = realtimeImageTask === 'active_reminder';
+        const staleDropped = reminderGrace
+          ? latencyMs > GEMINI_REALTIME_IMAGE_ABORT_MS
+          : resultAgeMs > GEMINI_REALTIME_IMAGE_EFFECTIVE_MS;
         if (effectiveExpired) {
           realtimeImageMetrics.timeoutEffectiveCount += 1;
         }
         if (staleDropped) {
           realtimeImageMetrics.staleDropCount += 1;
         }
-        console.log(`[realtime-image] task=${realtimeImageTask}; provider=gemini; model=${GEMINI_ACTIVE_REMINDER_MODEL}; requestId=${String(realtimeRequestId || '').slice(0, 100)}; capturedAt=${Number(capturedAt || 0)}; clientRequestSentAt=${Number(clientRequestSentAt || 0)}; requestSentAt=${requestSentAt}; resultReceivedAt=${resultReceivedAt}; latencyMs=${latencyMs}; effectiveExpired=${effectiveExpired ? 'yes' : 'no'}; aborted=no; staleDropped=${staleDropped ? 'yes' : 'no'}; inFlightCount=${Math.max(0, Number(inFlightCount || 0))}; dropReason=${staleDropped ? 'stale_result' : effectiveExpired ? 'timeout_effective' : ''}; realtime_image_timeout_effective_count=${realtimeImageMetrics.timeoutEffectiveCount}; realtime_image_abort_count=${realtimeImageMetrics.abortCount}; realtime_image_stale_drop_count=${realtimeImageMetrics.staleDropCount}`);
-        if (staleDropped || effectiveExpired) {
+        console.log(`[realtime-image] task=${realtimeImageTask}; provider=gemini; model=${GEMINI_ACTIVE_REMINDER_MODEL}; requestId=${String(realtimeRequestId || '').slice(0, 100)}; capturedAt=${Number(capturedAt || 0)}; clientRequestSentAt=${Number(clientRequestSentAt || 0)}; requestSentAt=${requestSentAt}; resultReceivedAt=${resultReceivedAt}; latencyMs=${latencyMs}; effectiveExpired=${effectiveExpired ? 'yes' : 'no'}; aborted=no; staleDropped=${staleDropped ? 'yes' : 'no'}; inFlightCount=${Math.max(0, Number(inFlightCount || 0))}; dropReason=${staleDropped ? 'stale_result' : effectiveExpired ? (reminderGrace ? 'late_result_forwarded' : 'timeout_effective') : ''}; realtime_image_timeout_effective_count=${realtimeImageMetrics.timeoutEffectiveCount}; realtime_image_abort_count=${realtimeImageMetrics.abortCount}; realtime_image_stale_drop_count=${realtimeImageMetrics.staleDropCount}`);
+        if (staleDropped || (effectiveExpired && !reminderGrace)) {
           const error = httpError(408, '实时图片结果已经过时，已丢弃。');
           error.realtimeImageStale = true;
           throw error;

@@ -28,5 +28,21 @@ const call=(signal)=>sandbox.requestBrowserDirectActiveReminderResult(reminder,i
     const before=generates;await assert.rejects(call({aborted:true}),/作废/);assert.equal(generates,before,'an expired frame never sends a new model request');
   }
   reminder.browserScreenPreparation=null;resolvePrepare=true;const stale=call();await Promise.resolve();const releaseStale=resolvePrepare;resolvePrepare=null;reminder.activeTaskSeq++;releaseStale();await assert.rejects(stale,/作废/);
+  if(source.includes('async function requestBrowserDirectActiveReminderLiveResult(')) {
+    const a=source.indexOf('async function requestBrowserDirectActiveReminderLiveResult('),b=source.indexOf('\nfunction ',a);
+    sandbox.GREEN_FIND_OBJECT_MAX_IN_FLIGHT=2;sandbox.GEMINI_DIRECT_FIND_REQUEST_TIMEOUT_MS=4000;
+    sandbox.setTimeout=setTimeout;sandbox.clearTimeout=clearTimeout;
+    sandbox.closeBrowserDirectActiveScreenSession=()=>{};
+    const manager={connectionId:'fixture',requestCount:0,keySlot:1};
+    manager.session={sendClientContent:()=>{const pending=manager.pending;manager.pending=null;clearTimeout(pending.timer);pending.resolve('N');}};
+    sandbox.getBrowserDirectActiveScreenSession=async()=>manager;
+    vm.runInContext(source.slice(a,b),sandbox);
+    reminder.browserScreenPreparation=null;reminder.activeScreenTransport='browser_direct_live';
+    const before=prepares;
+    await sandbox.requestBrowserDirectActiveReminderLiveResult(reminder,input);
+    await sandbox.requestBrowserDirectActiveReminderLiveResult(reminder,input);
+    assert.equal(prepares,before+1,'direct Live screening shares preparation, too');
+    await assert.rejects(sandbox.requestBrowserDirectActiveReminderLiveResult(reminder,input,{aborted:true}),/作废/);
+  }
   console.log('PASS same contract cache, new contract isolation, refresh, errors, concurrent prepare, aborted/late frame suppression');
 })().catch(error=>{console.error(error);process.exitCode=1;});
