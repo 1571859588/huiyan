@@ -51,6 +51,7 @@ node tools/run-native-checks.cjs
 - [本地实验与真实计时](docs/local-inference.md)：35B与1B的分工、有效和失败的优化、复现方式。
 - [协作任务与验收口径](CONTRIBUTING.md)：欢迎从底层优化，避免增加重复视觉复核和无谓模型调用。
 - [当前已知限制](docs/status.md)：已验证范围及仍需真机测试的部分。
+- [协作与后续交接](docs/github-collaboration.md)：远端更新检查、贡献评估及与正式版本同步的边界。
 - [私密材料边界](SECURITY.md)与[第三方许可证](THIRD_PARTY_NOTICES.md)。
 
 目录中的`providers/google`、`providers/aliyun`故意保留各自实现。先让工程师能对照真实流程，不为开源把两端强行合并重写。`source-provenance.json`记录来源提交和原始文件哈希；公开分发版仅做必要的模块排除、配置脱敏及独立启动适配，不直接等同于生产部署包。
