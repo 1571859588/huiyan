@@ -1,0 +1,31 @@
+name: Public source checks
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run check
+      - run: npm test
+      - run: node tools/run-native-checks.cjs
+      - name: Check immutable expert cache
+        run: |
+          clang++ -std=c++17 -pthread -fsanitize=address,undefined -I.github/scripts ios-native/Tests/PrefillReadCacheHarness.cpp -o /tmp/huiyan-cache-check
+          /tmp/huiyan-cache-check
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+        working-directory: ios-native/ScreenShareBuild
+      - run: node build.cjs
+        working-directory: ios-native/ScreenShareBuild
+  swift-syntax:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse public native sources
+        run: find ios-native -name '*.swift' -print0 | xargs -0 swiftc -frontend -parse

@@ -1,0 +1,10 @@
+{
+  "capturedAt": "2026-10-18",
+  "purpose": "Huiyan source distribution; teaching excluded; production host defaults replaced.",
+  "sources": {
+    "aliyun-app.js": "e25ed868bc5b1f6c3c4f5f7dc68f48726224c572c755beb190c3fdf81fc4565f",
+    "aliyun-live-web-search.js": "d576296bc19567060d77740b4d424b436351412c30d6164102dca1b368c5b535",
+    "greencloud-app.js": "ad46ad04f97e55d696d107d5df8606a13aa5de21ab096129781e7c773c2f6ba3",
+    "greencloud-live-web-search.js": "d576296bc19567060d77740b4d424b436351412c30d6164102dca1b368c5b535"
+  }
+}

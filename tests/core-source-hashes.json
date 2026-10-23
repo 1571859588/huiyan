@@ -1,0 +1,30 @@
+{
+  "providers/google/server.js": {
+    "buildGeminiProxyContractToolDeclaration": "95677e68ac88c8a1694dc8b94e30e13de26b748033d0942156317dcc02a1749a",
+    "summarizeContinuousDepthGrid": "30bcd91d2dba85740b7ea37eef804ecd296e6107424e345738f0aca26118f5cc",
+    "buildFindObjectPrompt": "92e2318b4f08da142e9ceba72d02a48144530e72cafe8914776f600f79a2cca7",
+    "parseFindObjectResult": "097af8f61990ceb3fd74a87b19564fa066925a6110fdd041441cf2160ff4c295",
+    "parseActiveReminderTaskNormalize": "1621f9cea8fa271c964e90b6028aa4c3c0ce7fa39fab0f33e2649d1443bc5249",
+    "buildNormalizedTaskText": "f3a55d371592ed00e4323752a4b7af9e8e9297ea54eb1e047d685edfb1f4d741"
+  },
+  "providers/google/public/app.js": {
+    "buildGeminiLiveSystemInstruction": "492358ca6ed8a10954b4dd7a29e576906415b904967ebb72e863ae7e163434cb",
+    "runGeminiActiveReminderTick": "e90efc257fbdb0da8be31e03fa634c6ba9dd1426428b2a5523634ad6826d65b2",
+    "handleGeminiReminderAlert": "3aa1fd99f1e5b5d0b202a21ec2bf9fbefeefcf449f30b7d09728f0e322b3d619",
+    "sendGeminiLiveEvent": "5597f18a107ff65aabc79f43ea7501cb760c15cf1ba5a846b4ddfcf38614eb6d"
+  },
+  "providers/aliyun/server.js": {
+    "buildGeminiProxyContractToolDeclaration": "95677e68ac88c8a1694dc8b94e30e13de26b748033d0942156317dcc02a1749a",
+    "summarizeContinuousDepthGrid": "30bcd91d2dba85740b7ea37eef804ecd296e6107424e345738f0aca26118f5cc",
+    "buildFindObjectPrompt": "a5437b85270eeeffc02336642b7f8758b702dd3ad2d93caeea1c40b5da9171c4",
+    "parseFindObjectResult": "097af8f61990ceb3fd74a87b19564fa066925a6110fdd041441cf2160ff4c295",
+    "parseActiveReminderTaskNormalize": "1621f9cea8fa271c964e90b6028aa4c3c0ce7fa39fab0f33e2649d1443bc5249",
+    "buildNormalizedTaskText": "f3a55d371592ed00e4323752a4b7af9e8e9297ea54eb1e047d685edfb1f4d741"
+  },
+  "providers/aliyun/public/app.js": {
+    "buildGeminiLiveSystemInstruction": "492358ca6ed8a10954b4dd7a29e576906415b904967ebb72e863ae7e163434cb",
+    "runGeminiActiveReminderTick": "5ee43dd63c8f3016b29593492d7cf66c6bf75e3bc5a88517d83bd4752be11219",
+    "handleGeminiReminderAlert": "b4d953c2607a942df74cea521f7cd8aad8a878f653138efe1fb21a1a87ef0858",
+    "sendGeminiLiveEvent": "89eecb52f0a9e25291be1b7c8166a416e1e31af7b46b05617d805fa738505f2a"
+  }
+}

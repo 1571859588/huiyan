@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>慧眼新版本测试</title>
+<style>body{font:20px system-ui;max-width:42rem;margin:2rem auto;padding:1rem}button{font:inherit;padding:1rem;margin:.4rem}video{width:100%;max-height:35vh}pre{white-space:pre-wrap;overflow-wrap:anywhere}</style>
+<h1>慧眼新版本测试</h1>
+<p>3.8 思考版，低档思考。手机只连接绿云服务器，由服务器连接单模型；加入目标出现、结果达成、状态变化三类主动提醒合同。无搜索、无图片快筛、无找东西和持续播报。每次通话最多十分钟。</p>
+<p>仅作室内安全测试，不能代替手杖或作为过街依据。</p>
+<button id="start">开始视频通话</button><button id="stop" disabled>结束通话</button>
+<p id="status" role="status">尚未连接</p>
+<video id="video" muted playsinline aria-label="后置摄像头预览"></video>
+<h2>最近回应</h2><pre id="transcript" aria-live="off"></pre>
+<details><summary>连接诊断</summary><pre id="diagnostic"></pre></details>
+<script src="/live38-thinking.js?v=20260916-server-proxy"></script>
+</html>
