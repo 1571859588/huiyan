@@ -1443,7 +1443,8 @@ function createRealtimeProxy(browserSocket, req) {
   let closed = false;
   let clientEventCount = 0;
   let upstreamMessageCount = 0;
-  const searchBridge = realtimeModelProfile === 'flash' ? createRealtimeSearchBridge({
+  const localScreenSearch = new URL(req?.url || '/api/ws', 'http://localhost').searchParams.get('localScreenSearch') === '1';
+  const searchBridge = (realtimeModelProfile === 'flash' || localScreenSearch) ? createRealtimeSearchBridge({
     search: searchHuiyanWeb,
     send: text => {
       if (closed) return;

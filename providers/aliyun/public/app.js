@@ -1203,6 +1203,9 @@ async function startWebSocketRealtime(modelProfile = '', options = {}) {
   if (modelProfile === 'flash') {
     socketUrl.searchParams.set('modelProfile', 'flash');
   }
+  if (window.HuiyanLocalScreenSearch?.enabled()) {
+    socketUrl.searchParams.set('localScreenSearch', '1');
+  }
   const socket = new WebSocket(socketUrl.toString());
   const audioContext = new AudioContext();
   let player = null;
