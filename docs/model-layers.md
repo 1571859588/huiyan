@@ -8,7 +8,7 @@
 | 应用层 | 完整合同的画面复核、事实整理、应用状态处理 | Google或阿里 |
 | 筛图层 | 持续检查当前图 | 云端跟随应用层；端侧使用本地模型 |
 
-组装定义只有一份：`shared/huiyan-model-layers.js`。普通云端检查、直连准备缓存以及原生本地复核都引用它。当前本地预设是本地Y/N、阿里3.7复核整理、所选Google或阿里Live播报；本地否定时跳过云端审核，命中时不再经过Google Lite或prepare。模型权重、音频链、原生权限和时间预算不由组装模块修改。
+组装定义只有一份：`shared/huiyan-model-layers.js`。普通云端检查、直连准备缓存以及原生本地复核都引用它。当前本地预设是本地Y/N、阿里3.7复核整理、所选Google或阿里Live播报。服务器上已测通的筛图模型还包括 `Qwen3-VL-4B`，运行配置在 `infrastructure/qwen3-vl-4b/runtime.json`。本地否定时跳过云端审核，命中时不再经过Google Lite或prepare。模型权重、音频链、原生权限和时间预算不由组装模块修改。
 
 `cloudPlan(speechProvider, applicationProvider)`让云端筛图跟随应用层；`localPlan(speechProvider, localModel)`使用当前已验证的阿里应用层。`resolve`可描述其他已适配组合；新供应商先实现自己的应用内接口，再用`registerProvider`注册。接口仍须遵守现有权限和部署配置。组装定义不代表所有供应商组合都已配置或验收，也不会自动启用付费路线。
 
