@@ -6,12 +6,18 @@ const http = require('node:http');
 
 const dir = __dirname;
 
+function requiredEnv(name) {
+  const value = process.env[name];
+  if (!value) throw new Error(`${name} 未设置。请传入自己的 llama-server 与权重路径。`);
+  return value;
+}
+
 function loadRuntime(file = path.join(dir, 'runtime.json')) {
   const runtime = JSON.parse(fs.readFileSync(file, 'utf8'));
   const server = runtime.llamaServer;
-  const bin = process.env.QWEN3VL_LLAMA_SERVER || server.bin;
-  const model = process.env.QWEN3VL_MODEL || server.model;
-  const mmproj = process.env.QWEN3VL_MMPROJ || server.mmproj;
+  const bin = requiredEnv('QWEN3VL_LLAMA_SERVER');
+  const model = requiredEnv('QWEN3VL_MODEL');
+  const mmproj = requiredEnv('QWEN3VL_MMPROJ');
   const host = process.env.QWEN3VL_HOST || server.host;
   const port = Number(process.env.QWEN3VL_PORT || server.port);
   const argv = [
@@ -69,10 +75,11 @@ function postJson(host, port, body) {
       res.on('data', (chunk) => chunks.push(chunk));
       res.on('end', () => {
         const text = Buffer.concat(chunks).toString('utf8');
-        if (res.statusCode !== 200) reject(new Error(`llama-server ${res.statusCode}: ${text.slice(0, 400)}`));
+        if (res.statusCode !== 200) reject(new Error(`llama-server ${res.statusCode}`));
         else resolve(JSON.parse(text));
       });
     });
+    req.setTimeout(2000, () => req.destroy(new Error('llama-server 无响应')));
     req.on('error', reject);
     req.end(payload);
   });

@@ -9,7 +9,6 @@
 | 方案 | 已跑通的分工 | 真实限制 |
 | --- | --- | --- |
 | 35B-A3B | 阿里建立合同；本地Y/N；命中后阿里结合当前图整理与发声 | 用户反馈较准；本地仍约4—8秒，未达总延迟目标 |
-| Qwen3-VL-4B（服务器） | 同一套中文 Y/N。图和条件同轮，1024 视觉 token。服务器 RTX 4090 上 32 条生活图为 31/32、误报 0 | 这是 llama-server 的服务器计时，不是手机。条件已缓存中位 120 毫秒，每张图第一次中位 216 毫秒 |
 | 1B + 阿里审核 + Google Live（当前源码） | Google直连Live合同；本地Y/N；正触发才由阿里3.7 Flash完整审核和整理；应用解析后交原Google Live播报 | 阿里视觉及Google Live仍可能拥堵；尚未完成新版手机听感验收 |
 | 1B + Google Lite审核（此前版本） | 本地Y/N命中后由Google直连Lite审核，再交原Google Live | 晚间本地约0.4—0.54秒，后续复核整段约4—7.6秒，另有约10秒超时；因此先试阿里审核 |
 | 1B + Live直接复核（历史） | 本地Y/N触发当前直连Live看图并决定是否说；当前不再加载此路径 | 本地约0.4—0.55秒；曾有成功交付，也出现12秒等待超时和只有文字无音频 |
@@ -43,16 +42,19 @@
 - 单Y/N采样后跳过反馈的快返只做过专项检查，没有手机提速证据，未启用。
 - 官方连续解码token/s不能替代此场景单图prefill/首判时间；默认不启用DSpark。
 
-## 服务器 Qwen3-VL-4B
+## 可选服务器对照：Qwen3-VL-4B
 
-手机上的 1B 和 35B 仍走原来的端侧引擎。Qwen3-VL-4B 用的是已经在这台服务器跑通的 llama-server：`Qwen3VL-4B-Instruct-Q4_K_M.gguf`、`mmproj-Qwen3VL-4B-Instruct-Q8_0.gguf`、上下文 4096、`--image-min-tokens 1024`、温度 0、最多 2 个 token。权重不进仓库。启动和单次筛图：
+这不是手机入口，也不接入提醒合同、找东西或播报。返回的 Y 不能当作现场事实，也不表示用户听到了声音。2026-10-28 在服务器 RTX 4090 上，用 llama.cpp llama-server build-1153、Qwen3-VL-4B-Instruct Q4_K_M、Q8_0 视觉投影、上下文 4096、批宽 256、`--image-min-tokens 1024`、温度 0、最多 2 个 token，对 32 条自备生活图做图文同轮 Y/N，结果是 31/32、误报 0。没有测量 503/429、断线恢复、每分钟请求数或账单。批宽保持文档中的 256，不改 35B 的 prefill 缓存。权重和可执行文件由贡献者自己提供，只通过环境变量传入。
 
 ```sh
+export QWEN3VL_LLAMA_SERVER=/path/to/llama-server
+export QWEN3VL_MODEL=/path/to/Qwen3VL-4B-Instruct-Q4_K_M.gguf
+export QWEN3VL_MMPROJ=/path/to/mmproj-Qwen3VL-4B-Instruct-Q8_0.gguf
 infrastructure/qwen3-vl-4b/serve.sh
-node infrastructure/qwen3-vl-4b/runtime.cjs ask frame.jpg "电梯屏" "顶部黑底屏显示 17"
+node infrastructure/qwen3-vl-4b/runtime.cjs ask frame.jpg "测试目标" "当前图中清晰出现测试目标"
 ```
 
-`QWEN3VL_LLAMA_SERVER`、`QWEN3VL_MODEL`、`QWEN3VL_MMPROJ`、`QWEN3VL_PORT` 可以换成本机路径。默认值就是上述已测文件。筛图组装里的模型名是 `Qwen3-VL-4B`，复核仍走阿里。
+模型名称和供应商能力会变化。上面的数字只对应该日、该配置，不表示以后免费或在手机上同样可用。
 
 ## 如何复现
 

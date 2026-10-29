@@ -66,19 +66,9 @@
   function cloudPlan(speechProvider, applicationProvider) {
     return resolve({ speechProvider, applicationProvider, screeningSource: 'cloud' });
   }
-  const localModels = Object.freeze({
-    'MiniCPM-V-4.7-1B': Object.freeze({ runtime: 'ios' }),
-    'MiniCPM-V-4.7-35B-A3B': Object.freeze({ runtime: 'ios' }),
-    'Qwen3-VL-4B': Object.freeze({ runtime: 'infrastructure/qwen3-vl-4b/runtime.json' })
-  });
-  function localModel(id) {
-    const model = localModels[id];
-    if (!model) throw new Error('本地筛图模型未配置。');
-    return model;
-  }
-  function localPlan(speechProvider, localModelId) {
+  function localPlan(speechProvider, localModel) {
     // Current proven local composition; swapping providers does not create rules.
-    return resolve({ speechProvider, applicationProvider: 'aliyun', screeningSource: 'local', localModel: localModelId });
+    return resolve({ speechProvider, applicationProvider: 'aliyun', screeningSource: 'local', localModel });
   }
   function forRuntime(reminder, appVariant) {
     if (reminder?.modelLayers) return reminder.modelLayers;
@@ -87,5 +77,5 @@
   function endpoint(reminder, appVariant, name, fallback) {
     return forRuntime(reminder, appVariant).application.endpoints[name] || fallback;
   }
-  return Object.freeze({ version: 1, registerProvider, resolve, cloudPlan, localPlan, localModel, forRuntime, endpoint, readbackRules: () => readback.slice(), resultRules: () => resultRules.slice() });
+  return Object.freeze({ version: 1, registerProvider, resolve, cloudPlan, localPlan, forRuntime, endpoint, readbackRules: () => readback.slice(), resultRules: () => resultRules.slice() });
 });
